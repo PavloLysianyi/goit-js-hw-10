@@ -22,23 +22,18 @@ function showCatInfo(cat) {
   const catElements = cat.map(catItem => {
     const { url, breeds } = catItem;
 
-    const catImage = createHTMLElement('img', { src: url });
+    const catImage = `<img src="${url}">`;
+    const catName = `<h2>${breeds[0].name}</h2>`;
+    const catDescription = `<p>${breeds[0].description}</p>`;
 
-    const catName = createHTMLElement('h2', { textContent: breeds[0].name });
-
-    const catDescription = createHTMLElement('p', {
-      textContent: breeds[0].description,
-    });
-
-    return [catImage, catName, catDescription];
+    return [catImage, catName, catDescription].join('');
   });
 
   const fragment = document.createDocumentFragment();
 
-  catElements.forEach(elements => {
-    elements.forEach(element => {
-      fragment.appendChild(element);
-    });
+  catElements.forEach(element => {
+    const div = createHTMLElement('div', { innerHTML: element });
+    fragment.appendChild(div);
   });
 
   catInfo.appendChild(fragment);
