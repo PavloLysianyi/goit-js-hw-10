@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Notiflix from 'notiflix';
-import '../node_modules/spinkit/spinkit.min.css';
+import 'spinkit/spinkit.min.css';
 
 axios.defaults.headers.common['x-api-key'] =
   'live_rn81S0WQPrMxUwuMHj8VnUr6pJKvu0XfKTpYntSXNQ4AjYOHpCIP4bmPRYJE2ERU';
