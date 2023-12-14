@@ -1,110 +1,89 @@
 import axios from 'axios';
-import SlimSelect from 'slim-select';
-import 'loaders.css/loaders.min.css';
-import Notiflix from 'notiflix';
 
 axios.defaults.headers.common['x-api-key'] =
   'live_rn81S0WQPrMxUwuMHj8VnUr6pJKvu0XfKTpYntSXNQ4AjYOHpCIP4bmPRYJE2ERU';
 
-const breedSelect = new SlimSelect({
-  select: '.breed-select',
-  placeholder: 'Select Cat Breed',
-});
-
+const breedSelect = document.querySelector('.breed-select');
 const loader = document.querySelector('.loader');
 const error = document.querySelector('.error');
 const catInfo = document.querySelector('.cat-info');
 
 function fetchBreeds() {
-  loader.style.display = 'block';
-  breedSelect.slim.hide();
-
   return axios
     .get('https://api.thecatapi.com/v1/breeds')
     .then(response => response.data)
-    .then(breeds => {
-      breeds.forEach(breed => {
-        breedSelect.add(breed.name, breed.id);
-      });
-    })
-    .catch(handleError)
-    .finally(() => {
-      loader.style.display = 'none';
-      breedSelect.slim.show();
+    .catch(error => {
+      console.error('Error fetching breeds:', error);
+      throw error;
     });
 }
 
 function fetchCatByBreed(breedId) {
+  return axios
+    .get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}`)
+    .then(response => response.data)
+    .catch(error => {
+      console.error('Error fetching cat by breed:', error);
+      throw error;
+    });
+}
+
+function populateBreedsSelect(breeds) {
+  breeds.forEach(breed => {
+    const option = document.createElement('option');
+    option.value = breed.id;
+    option.text = breed.name;
+    breedSelect.appendChild(option);
+  });
+}
+
+function showCatInfo(cat) {
+  const catImage = document.createElement('img');
+  catImage.src = cat[0].url;
+
+  const catName = document.createElement('h2');
+  catName.textContent = cat[0].breeds[0].name;
+
+  const catDescription = document.createElement('p');
+  catDescription.textContent = cat[0].breeds[0].description;
+
+  // Clear previous cat info
+  catInfo.innerHTML = '';
+
+  // Append new cat info
+  catInfo.appendChild(catImage);
+  catInfo.appendChild(catName);
+  catInfo.appendChild(catDescription);
+}
+
+// Event listener for breed select change
+breedSelect.addEventListener('change', () => {
+  const selectedBreedId = breedSelect.value;
+
+  // Show loader while fetching cat info
   loader.style.display = 'block';
   catInfo.style.display = 'none';
   error.style.display = 'none';
 
-  return axios
-    .get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}`)
-    .then(response => {
-      const catData = response.data ? response.data[0] : null;
-
-      if (catData) {
-        const image = document.createElement('img');
-        image.src = catData.url;
-
-        const breedName = document.createElement('h2');
-        breedName.textContent = catData.breeds[0].name;
-
-        const description = document.createElement('p');
-        description.textContent = catData.breeds[0].description;
-
-        const temperament = document.createElement('p');
-        temperament.textContent = `Temperament: ${catData.breeds[0].temperament}`;
-
-        catInfo.innerHTML = '';
-        catInfo.appendChild(image);
-        catInfo.appendChild(breedName);
-        catInfo.appendChild(description);
-        catInfo.appendChild(temperament);
-      } else {
-        Notiflix.Notify.Failure('No cat data found for the selected breed.');
-      }
-    })
-    .catch(handleError)
-    .finally(() => {
+  // Fetch cat info by breed
+  fetchCatByBreed(selectedBreedId)
+    .then(cat => {
+      // Hide loader on successful fetch
       loader.style.display = 'none';
       catInfo.style.display = 'block';
+
+      // Display cat info
+      showCatInfo(cat);
+    })
+    .catch(err => {
+      // Hide loader and display error on failed fetch
+      loader.style.display = 'none';
+      error.style.display = 'block';
+      console.error('Error fetching cat info:', err);
     });
-}
-
-function handleError(error) {
-  loader.style.display = 'none';
-  error.style.display = 'block';
-  console.error('Error:', error);
-
-  Notify.failure('An error occurred. Please try again later.');
-}
-
-breedSelect.placeholder.textContent = 'Select Cat Breed';
-breedSelect.searchPlaceholder.textContent = 'Search breeds...';
-
-breedSelect.slim.data.search.addEventListener('input', function (event) {
-  const query = event.target.value.toLowerCase();
-
-  breedSelect.slim.data.optgroup.forEach(optgroup => {
-    const filteredOptions = optgroup.options.filter(option =>
-      option.textContent.toLowerCase().includes(query)
-    );
-
-    if (filteredOptions.length > 0) {
-      breedSelect.slim.set(optgroup, filteredOptions);
-    } else {
-      breedSelect.slim.set(optgroup, []);
-    }
-  });
 });
 
-breedSelect.slim.data.select.addEventListener('change', function () {
-  const selectedBreedId = breedSelect.slim.data.getSelectedValue();
-  if (selectedBreedId) {
-    fetchCatByBreed(selectedBreedId);
-  }
-});
-
-fetchBreeds();
+// Fetch and populate breeds on page load
+fetchBreeds()
+  .then(breeds => populateBreedsSelect(breeds))
+  .catch(err => console.error('Error fetching breeds:', err));
