@@ -81,8 +81,8 @@ function handleError(error) {
   Notify.failure('An error occurred. Please try again later.');
 }
 
-breedSelect.data.placeholder.textContent = 'Select Cat Breed';
-breedSelect.data.searchPlaceholder.textContent = 'Search breeds...';
+breedSelect.placeholder.textContent = 'Select Cat Breed';
+breedSelect.searchPlaceholder.textContent = 'Search breeds...';
 
 breedSelect.slim.data.search.addEventListener('input', function (event) {
   const query = event.target.value.toLowerCase();
