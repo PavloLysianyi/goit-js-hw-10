@@ -1,54 +1,11 @@
-import axios from 'axios';
 import Notiflix from 'notiflix';
 import 'spinkit/spinkit.min.css';
-
-axios.defaults.headers.common['x-api-key'] =
-  'live_rn81S0WQPrMxUwuMHj8VnUr6pJKvu0XfKTpYntSXNQ4AjYOHpCIP4bmPRYJE2ERU';
+import { fetchBreeds, fetchCatByBreed } from './api';
 
 const breedSelect = document.querySelector('.breed-select');
 const loader = document.querySelector('.loader');
 const error = document.querySelector('.error');
 const catInfo = document.querySelector('.cat-info');
-
-function fetchBreeds() {
-  loader.style.display = 'block';
-  breedSelect.style.display = 'none';
-  error.style.display = 'none';
-
-  return axios
-    .get('https://api.thecatapi.com/v1/breeds')
-    .then(response => response.data)
-    .finally(() => {
-      loader.style.display = 'none';
-      breedSelect.style.display = 'block';
-    })
-    .catch(error => {
-      console.error('Error fetching breeds:', error);
-      error.style.display = 'block';
-      Notiflix.Notify.Failure('Error fetching breeds');
-      throw error;
-    });
-}
-
-function fetchCatByBreed(breedId) {
-  loader.style.display = 'block';
-  catInfo.style.display = 'none';
-  error.style.display = 'none';
-
-  return axios
-    .get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}`)
-    .then(response => response.data)
-    .finally(() => {
-      loader.style.display = 'none';
-      catInfo.style.display = 'block';
-    })
-    .catch(error => {
-      console.error('Error fetching cat by breed:', error);
-      error.style.display = 'block';
-      Notiflix.Notify.Failure('Error fetching cat by breed');
-      throw error;
-    });
-}
 
 function populateBreedsSelect(breeds) {
   breeds.forEach(breed => {
@@ -60,32 +17,73 @@ function populateBreedsSelect(breeds) {
 }
 
 function showCatInfo(cat) {
-  const catImage = document.createElement('img');
-  catImage.src = cat[0].url;
-
-  const catName = document.createElement('h2');
-  catName.textContent = cat[0].breeds[0].name;
-
-  const catDescription = document.createElement('p');
-  catDescription.textContent = cat[0].breeds[0].description;
-
   catInfo.innerHTML = '';
 
-  catInfo.appendChild(catImage);
-  catInfo.appendChild(catName);
-  catInfo.appendChild(catDescription);
+  const catElements = cat.map(catItem => {
+    const { url, breeds } = catItem;
+
+    const catImage = createHTMLElement('img', { src: url });
+
+    const catName = createHTMLElement('h2', { textContent: breeds[0].name });
+
+    const catDescription = createHTMLElement('p', {
+      textContent: breeds[0].description,
+    });
+
+    return [catImage, catName, catDescription];
+  });
+
+  const fragment = document.createDocumentFragment();
+
+  catElements.forEach(elements => {
+    elements.forEach(element => {
+      fragment.appendChild(element);
+    });
+  });
+
+  catInfo.appendChild(fragment);
+}
+
+function createHTMLElement(tag, attributes) {
+  const element = document.createElement(tag);
+
+  for (const [key, value] of Object.entries(attributes)) {
+    element[key] = value;
+  }
+
+  return element;
 }
 
 breedSelect.addEventListener('change', () => {
   const selectedBreedId = breedSelect.value;
 
+  loader.style.display = 'block';
+  catInfo.style.display = 'none';
+  error.style.display = 'none';
+
   fetchCatByBreed(selectedBreedId)
     .then(cat => {
       showCatInfo(cat);
     })
-    .catch(err => console.error('Error fetching cat info:', err));
+    .catch(err => console.error('Помилка отримання інформації про кота:', err))
+    .finally(() => {
+      loader.style.display = 'none';
+      catInfo.style.display = 'block';
+    });
 });
 
+loader.style.display = 'block';
+breedSelect.style.display = 'none';
+error.style.display = 'none';
+
 fetchBreeds()
-  .then(breeds => populateBreedsSelect(breeds))
-  .catch(err => console.error('Error fetching breeds:', err));
+  .then(breeds => {
+    populateBreedsSelect(breeds);
+    loader.style.display = 'none';
+    breedSelect.style.display = 'block';
+  })
+  .catch(err => {
+    console.error('Помилка отримання порід:', err);
+    error.style.display = 'block';
+    Notiflix.Notify.Failure('Помилка отримання порід');
+  });
