@@ -73,7 +73,7 @@ function handleError(error) {
   error.style.display = 'block';
   console.error('Error:', error);
 
-  Notiflix.Notify.Failure('An error occurred. Please try again later.');
+  Notify.failure('An error occurred. Please try again later.');
 }
 
 breedSelect.slim.data.placeholder.textContent = 'Select Cat Breed';
