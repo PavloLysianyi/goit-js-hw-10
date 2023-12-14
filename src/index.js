@@ -1,34 +1,36 @@
 import axios from 'axios';
 import SlimSelect from 'slim-select';
+import 'loaders.css/loaders.min.css';
+import Notiflix from 'notiflix';
 
 axios.defaults.headers.common['x-api-key'] =
   'live_rn81S0WQPrMxUwuMHj8VnUr6pJKvu0XfKTpYntSXNQ4AjYOHpCIP4bmPRYJE2ERU';
 
-const breedSelect = document.querySelector('.breed-select');
+const breedSelect = new SlimSelect({
+  select: '.breed-select',
+  placeholder: 'Select Cat Breed',
+});
+
 const loader = document.querySelector('.loader');
 const error = document.querySelector('.error');
 const catInfo = document.querySelector('.cat-info');
 
 function fetchBreeds() {
   loader.style.display = 'block';
-  breedSelect.style.display = 'none';
-  error.style.display = 'none';
+  breedSelect.slim.hide();
 
   return axios
     .get('https://api.thecatapi.com/v1/breeds')
     .then(response => response.data)
     .then(breeds => {
       breeds.forEach(breed => {
-        const option = document.createElement('option');
-        option.value = breed.id;
-        option.text = breed.name;
-        breedSelect.add(option);
+        breedSelect.add(breed.name, breed.id);
       });
     })
     .catch(handleError)
     .finally(() => {
       loader.style.display = 'none';
-      breedSelect.style.display = 'block';
+      breedSelect.slim.show();
     });
 }
 
@@ -70,20 +72,34 @@ function handleError(error) {
   loader.style.display = 'none';
   error.style.display = 'block';
   console.error('Error:', error);
+
+  Notiflix.Notify.Failure('An error occurred. Please try again later.');
 }
 
-breedSelect.addEventListener('change', function () {
-  const selectedBreedId = this.value;
+breedSelect.slim.data.placeholder.textContent = 'Select Cat Breed';
+breedSelect.slim.data.searchPlaceholder.textContent = 'Search breeds...';
+
+breedSelect.slim.data.search.addEventListener('input', function (event) {
+  const query = event.target.value.toLowerCase();
+
+  breedSelect.slim.data.optgroup.forEach(optgroup => {
+    const filteredOptions = optgroup.options.filter(option =>
+      option.textContent.toLowerCase().includes(query)
+    );
+
+    if (filteredOptions.length > 0) {
+      breedSelect.slim.set(optgroup, filteredOptions);
+    } else {
+      breedSelect.slim.set(optgroup, []);
+    }
+  });
+});
+
+breedSelect.slim.data.select.addEventListener('change', function () {
+  const selectedBreedId = breedSelect.slim.data.getSelectedValue();
   if (selectedBreedId) {
     fetchCatByBreed(selectedBreedId);
   }
 });
 
 fetchBreeds();
-
-fetchBreeds().then(() => {
-  new SlimSelect({
-    select: '.breed-select',
-    placeholder: 'Select Cat Breed',
-  });
-});
