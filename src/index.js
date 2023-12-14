@@ -41,25 +41,30 @@ function fetchCatByBreed(breedId) {
 
   return axios
     .get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}`)
-    .then(response => response.data[0])
-    .then(catData => {
-      const image = document.createElement('img');
-      image.src = catData.url;
+    .then(response => {
+      const catData = response.data ? response.data[0] : null;
 
-      const breedName = document.createElement('h2');
-      breedName.textContent = catData.breeds[0].name;
+      if (catData) {
+        const image = document.createElement('img');
+        image.src = catData.url;
 
-      const description = document.createElement('p');
-      description.textContent = catData.breeds[0].description;
+        const breedName = document.createElement('h2');
+        breedName.textContent = catData.breeds[0].name;
 
-      const temperament = document.createElement('p');
-      temperament.textContent = `Temperament: ${catData.breeds[0].temperament}`;
+        const description = document.createElement('p');
+        description.textContent = catData.breeds[0].description;
 
-      catInfo.innerHTML = '';
-      catInfo.appendChild(image);
-      catInfo.appendChild(breedName);
-      catInfo.appendChild(description);
-      catInfo.appendChild(temperament);
+        const temperament = document.createElement('p');
+        temperament.textContent = `Temperament: ${catData.breeds[0].temperament}`;
+
+        catInfo.innerHTML = '';
+        catInfo.appendChild(image);
+        catInfo.appendChild(breedName);
+        catInfo.appendChild(description);
+        catInfo.appendChild(temperament);
+      } else {
+        Notiflix.Notify.Failure('No cat data found for the selected breed.');
+      }
     })
     .catch(handleError)
     .finally(() => {
