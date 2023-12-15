@@ -8,35 +8,24 @@ const error = document.querySelector('.error');
 const catInfo = document.querySelector('.cat-info');
 
 function populateBreedsSelect(breeds) {
-  breeds.forEach(breed => {
-    const option = document.createElement('option');
-    option.value = breed.id;
-    option.text = breed.name;
-    breedSelect.appendChild(option);
-  });
+  breedSelect.innerHTML = breeds
+    .map(({ id, name }) => `<option value="${id}">${name}</option>`)
+    .join('');
 }
 
 function showCatInfo(cat) {
-  catInfo.innerHTML = '';
-
-  const catElements = cat.map(catItem => {
-    const { url, breeds } = catItem;
-
-    const catImage = `<img src="${url}">`;
-    const catName = `<h2>${breeds[0].name}</h2>`;
-    const catDescription = `<p>${breeds[0].description}</p>`;
-
-    return [catImage, catName, catDescription].join('');
-  });
-
-  const fragment = document.createDocumentFragment();
-
-  catElements.forEach(element => {
-    const div = createHTMLElement('div', { innerHTML: element });
-    fragment.appendChild(div);
-  });
-
-  catInfo.appendChild(fragment);
+  catInfo.innerHTML = cat
+    .map(({ url, breeds }) => {
+      const { name, description } = breeds[0];
+      return `
+        <div>
+          <img src="${url}">
+          <h2>${name}</h2>
+          <p>${description}</p>
+        </div>
+      `;
+    })
+    .join('');
 }
 
 function createHTMLElement(tag, attributes) {
@@ -57,10 +46,9 @@ breedSelect.addEventListener('change', () => {
   error.style.display = 'none';
 
   fetchCatByBreed(selectedBreedId)
-    .then(cat => {
-      showCatInfo(cat);
+    .then(({ data }) => {
+      showCatInfo(data);
     })
-    .catch(err => console.error('Помилка отримання інформації про кота:', err))
     .finally(() => {
       loader.style.display = 'none';
       catInfo.style.display = 'block';
@@ -72,7 +60,7 @@ breedSelect.style.display = 'none';
 error.style.display = 'none';
 
 fetchBreeds()
-  .then(breeds => {
+  .then(({ data: breeds }) => {
     populateBreedsSelect(breeds);
     loader.style.display = 'none';
     breedSelect.style.display = 'block';
